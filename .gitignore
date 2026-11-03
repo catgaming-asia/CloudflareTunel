@@ -64,4 +64,5 @@ fastlane/test_output
 # CloudflareTunnel
 .swiftpm/
 .DS_Store
-# build/CloudflareTunnel.app is committed so the team can open it without building.
+# build/CloudflareTunnel.app is committed so the team can open it without building; release zips are not.
+build/release/

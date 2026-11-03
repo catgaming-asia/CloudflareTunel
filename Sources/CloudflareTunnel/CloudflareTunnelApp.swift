@@ -4,17 +4,28 @@ import SwiftUI
 @main
 struct CloudflareTunnelApp: App {
     @StateObject private var model = TunnelModel()
+    @StateObject private var updater = Updater()
     @NSApplicationDelegateAdaptor private var delegate: AppDelegate
 
     var body: some Scene {
         Window("Cloudflare Tunnel", id: "main") {
             ContentView()
                 .environmentObject(model)
+                .environmentObject(updater)
                 .frame(minWidth: 760, minHeight: 560)
+        }
+        .commands {
+            CommandGroup(after: .appInfo) {
+                Button("Check for Updates…") { updater.showSheet = true }
+            }
+        }
+
+        Settings {
+            SettingsView().environmentObject(updater)
         }
 
         MenuBarExtra {
-            MenuBarContent().environmentObject(model)
+            MenuBarContent().environmentObject(model).environmentObject(updater)
         } label: {
             Image(systemName: model.runningCount > 0 ? "cloud.fill" : "cloud")
         }
@@ -33,6 +44,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
 struct MenuBarContent: View {
     @EnvironmentObject private var model: TunnelModel
+    @EnvironmentObject private var updater: Updater
     @Environment(\.openWindow) private var openWindow
 
     var body: some View {
@@ -43,6 +55,11 @@ struct MenuBarContent: View {
         Button("Start All") { model.startAll() }
         Button("Stop All") { model.stopAll() }
         Divider()
+        Button(updater.available.map { "Update to \($0.version)…" } ?? "Check for Updates…") {
+            updater.showSheet = true
+            openWindow(id: "main")
+            NSApp.activate(ignoringOtherApps: true)
+        }
         Button("Open Window") {
             openWindow(id: "main")
             NSApp.activate(ignoringOtherApps: true)
@@ -65,9 +82,18 @@ private struct MenuBarRow: View {
 
 struct ContentView: View {
     @EnvironmentObject private var model: TunnelModel
+    @EnvironmentObject private var updater: Updater
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
+            if let release = updater.available, !updater.showSheet {
+                HStack {
+                    Label("Cloudflare Tunnel \(release.version) is available (you have \(updater.current)).", systemImage: "arrow.down.circle.fill")
+                        .foregroundStyle(.blue)
+                    Spacer()
+                    Button("Update…") { updater.showSheet = true }
+                }
+            }
             HStack {
                 Text("Ports").font(.headline)
                 Spacer()
@@ -97,6 +123,9 @@ struct ContentView: View {
             logBox
         }
         .padding(16)
+        .sheet(isPresented: $updater.showSheet) { UpdateSheet() }
+        // Quiet check on launch: only shows the banner when a newer release exists.
+        .task { updater.check(quiet: true) }
         .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in model.refresh() }
     }
 
@@ -215,8 +244,9 @@ struct TunnelRow: View {
                     HStack {
                         Text("Domain").frame(width: 60, alignment: .leading)
                         TextField("nakama.example.com", text: $item.entry.hostname).frame(width: 240)
-                        Text("Tunnel")
+                        Text("Tunnel name")
                         TextField("name", text: $item.entry.tunnelName).frame(width: 180)
+                            .help("Name of the tunnel on your Cloudflare account (Zero Trust › Networks › Tunnels). Created on first Start; one per domain, any name you like.")
                         Spacer()
                     }
                     .disabled(!item.isStopped)

@@ -16,7 +16,22 @@ Ví dụ Nakama: lần mở đầu app có sẵn 2 dòng **Nakama API** (`7350`)
 brew install cloudflared
 ```
 
-Mở app: `open build/CloudflareTunnel.app` (đã commit sẵn). Build lại: bấm đúp `build/build-app.command` hoặc `swift run` khi đang sửa code. Cần macOS 14+ và Xcode (Swift 5.9+).
+Mở app: `open build/CloudflareTunnel.app` (đã commit sẵn). Build lại: bấm đúp `build/build-app.command` hoặc `swift run` khi đang sửa code. Ký bằng chứng chỉ Apple Development giống Local Server (máy không có thì ký ad-hoc; đổi bằng `CLOUDFLARETUNNEL_SIGN_IDENTITY`). Cần macOS 14+ và Xcode (Swift 5.9+).
+
+## Cập nhật (Check for Updates)
+
+App tự kiểm bản mới khi mở (có bản mới thì hiện thanh xanh **Update…**), hoặc **Cloudflare Tunnel › Check for Updates…** / menu bar.
+App đọc `latest.json` ở thư mục công khai trên R2 (mặc định `https://data.catgaming.asia/CloudflareTunnel/release/`, đổi trong **Settings…**),
+tải zip, kiểm kích thước + SHA-256 + bundle id + version, rồi thay app và mở lại.
+
+Phát hành bản mới (trên nhánh `main`, working tree sạch):
+
+```bash
+build/release.command            # patch; hoặc minor | major | 1.2.0, thêm --notes "..." nếu muốn
+```
+
+Script tăng `VERSION`, build lại `build/CloudflareTunnel.app`, commit `Release v<x>` + tag `v<x>`, tạo `build/release/CloudflareTunnel-<x>.zip` và `latest.json`,
+rồi hỏi có push không. Sau đó tải **zip trước, `latest.json` sau** lên `CloudflareTunnel/release/` trong bucket R2 và purge cache `latest.json`.
 
 ## Dùng
 
@@ -26,7 +41,7 @@ Mở app: `open build/CloudflareTunnel.app` (đã commit sẵn). Build lại: b�
 - **Custom domain**: URL cố định `https://<domain>`; domain phải là zone trong tài khoản Cloudflare.
   **Logout** (khi đã đăng nhập) chuyển `cert.pem` vào Thùng rác; tunnel đang chạy vẫn chạy, muốn Start Custom domain thì Login lại.
   1. **Login…** một lần trên máy (khung *Cloudflare*). Ở trang **Authorize Cloudflare Tunnel** chọn zone (vd. `example.com`) rồi bấm **Authorize** → có `~/.cloudflared/cert.pem`.
-  2. Nhập **Domain** (vd. `nakama.example.com`) và **Tunnel** (tên tunnel riêng cho mỗi dòng, vd. `nakama-api`, `nakama-console`).
+  2. Nhập **Domain** (vd. `nakama.example.com`) và **Tunnel name**: tên tunnel trên tài khoản Cloudflare, đặt tuỳ ý (vd. `nakama-api`, `nakama-console`), mỗi domain một tên. Start lần đầu tự tạo; đã có thì dùng lại.
   3. **Start** tự tạo tunnel (nếu chưa có) và bản ghi DNS (ghi đè bản ghi cũ).
 - **Copy / Open** URL công khai; khung **Log** hiện cảnh báo/lỗi của `cloudflared`.
 - Icon đám mây trên menu bar: Start/Stop từng port, copy URL khi đã đóng cửa sổ. Thoát app sẽ tắt mọi `cloudflared`.
