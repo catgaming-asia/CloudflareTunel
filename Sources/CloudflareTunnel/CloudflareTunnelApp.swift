@@ -162,7 +162,7 @@ struct ContentView: View {
                     }
                 }
                 if model.isLoggingIn {
-                    Text("Signing in is not enough: on the “Authorize Cloudflare Tunnel” page pick the zone of your domain (e.g. example.com for nakama.example.com) and click Authorize.")
+                    Text("Signing in is not enough: on the “Authorize Cloudflare Tunnel” page pick the zone of your domain (e.g. example.com for api.example.com) and click Authorize.")
                         .font(.caption).foregroundStyle(.orange).fixedSize(horizontal: false, vertical: true)
                 }
                 if let error = model.loginError {
@@ -210,10 +210,12 @@ struct TunnelRow: View {
             VStack(alignment: .leading, spacing: 8) {
                 HStack(spacing: 8) {
                     Image(systemName: statusIcon).foregroundStyle(statusColor)
-                    TextField("Name", text: $item.entry.label, prompt: Text("Port \(item.entry.port)"))
-                        .frame(width: 150)
+                    TextField("Name", text: $item.entry.label, prompt: Text("Name (optional), e.g. My API"))
+                        .frame(width: 190)
+                        .help("Only shown in this app, the menu bar and the log.")
                     Text("Port")
-                    TextField("7350", value: $item.entry.port, format: .number.grouping(.never)).frame(width: 64)
+                    TextField("Port", text: portText, prompt: Text("e.g. 8080")).frame(width: 80)
+                        .help("Port of the server running on this Mac (localhost).")
                         .disabled(!item.isStopped)
                     portBadge
                     Toggle("HTTPS origin", isOn: $item.entry.originTLS)
@@ -243,9 +245,12 @@ struct TunnelRow: View {
                 if item.entry.mode == .domain {
                     HStack {
                         Text("Domain").frame(width: 60, alignment: .leading)
-                        TextField("nakama.example.com", text: $item.entry.hostname).frame(width: 240)
+                        TextField("Domain", text: $item.entry.hostname, prompt: Text("e.g. api.example.com")).frame(width: 240)
+                            .help("Fixed public address. Must be on a domain (zone) of your Cloudflare account.")
                         Text("Tunnel name")
-                        TextField("name", text: $item.entry.tunnelName).frame(width: 180)
+                        TextField("Tunnel name", text: $item.entry.tunnelName,
+                                  prompt: Text(item.entry.port > 0 ? "any name, empty = tunnel-\(item.entry.port)" : "any name, e.g. my-api"))
+                            .frame(width: 230)
                             .help("Name of the tunnel on your Cloudflare account (Zero Trust › Networks › Tunnels). Created on first Start; one per domain, any name you like.")
                         Spacer()
                     }
@@ -269,8 +274,14 @@ struct TunnelRow: View {
         }
     }
 
+    /// Digits only; empty = 0 (not entered).
+    private var portText: Binding<String> {
+        Binding(get: { item.entry.port > 0 ? String(item.entry.port) : "" },
+                set: { item.entry.port = Int($0.filter(\.isNumber).prefix(5)) ?? 0 })
+    }
+
     @ViewBuilder private var portBadge: some View {
-        switch item.isPortOpen {
+        switch item.entry.port > 0 ? item.isPortOpen : nil {
         case true?:
             Text("listening").font(.caption).foregroundStyle(.green)
                 .help("Something accepts connections on localhost:\(item.entry.port).")

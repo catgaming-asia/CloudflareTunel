@@ -3,7 +3,7 @@
 App macOS mở **Cloudflare Tunnel** cho các port đang chạy trên máy: mỗi port một dòng, nhập port rồi **Start** để có URL `https://…` truy cập từ bất kỳ mạng nào (HTTP và WebSocket).
 Tính năng tunnel lấy từ [LocalServer](https://github.com/catgaming-asia/LocalServer).
 
-Ví dụ Nakama: lần mở đầu app có sẵn 2 dòng **Nakama API** (`7350`) và **Nakama Console** (`7351`). Chạy Nakama, bấm **Start** từng dòng (hoặc **Start All**):
+Lần mở đầu app có 1 dòng trống: điền **Port** rồi bấm **Start**; cần thêm port thì **Add Port**. Ví dụ Nakama: thêm 2 dòng `7350` và `7351`, Start từng dòng (hoặc **Start All**):
 
 | Port | Dùng | Ở client |
 |---|---|---|
@@ -36,12 +36,12 @@ rồi hỏi có push không. Sau đó tải **zip trước, `latest.json` sau** 
 ## Dùng
 
 - **Add Port** thêm dòng, 🗑 xoá dòng. Danh sách được lưu lại.
-- Mỗi dòng: **Name**, **Port**, *listening / not listening* (app kiểm `localhost:<port>` mỗi 3 giây), **HTTPS origin** (bật khi server local tự chạy https, không kiểm chứng chỉ).
+- Mỗi dòng: **Name** (tuỳ chọn, chỉ để hiển thị), **Port** (port của server trên máy), *listening / not listening* (app kiểm `localhost:<port>` mỗi 3 giây), **HTTPS origin** (bật khi server local tự chạy https, không kiểm chứng chỉ).
 - **Quick**: URL ngẫu nhiên `https://<từ-ngẫu-nhiên>.trycloudflare.com`, không cần tài khoản, đổi mỗi lần Start.
 - **Custom domain**: URL cố định `https://<domain>`; domain phải là zone trong tài khoản Cloudflare.
   **Logout** (khi đã đăng nhập) chuyển `cert.pem` vào Thùng rác; tunnel đang chạy vẫn chạy, muốn Start Custom domain thì Login lại.
   1. **Login…** một lần trên máy (khung *Cloudflare*). Ở trang **Authorize Cloudflare Tunnel** chọn zone (vd. `example.com`) rồi bấm **Authorize** → có `~/.cloudflared/cert.pem`.
-  2. Nhập **Domain** (vd. `nakama.example.com`) và **Tunnel name**: tên tunnel trên tài khoản Cloudflare, đặt tuỳ ý (vd. `nakama-api`, `nakama-console`), mỗi domain một tên. Start lần đầu tự tạo; đã có thì dùng lại.
+  2. Nhập **Domain** (vd. `api.example.com`) và **Tunnel name**: tên tunnel trên tài khoản Cloudflare, đặt tuỳ ý (vd. `my-api`; để trống = `tunnel-<port>`), mỗi domain một tên. Start lần đầu tự tạo; đã có thì dùng lại.
   3. **Start** tự tạo tunnel (nếu chưa có) và bản ghi DNS (ghi đè bản ghi cũ).
 - **Copy / Open** URL công khai; khung **Log** hiện cảnh báo/lỗi của `cloudflared`.
 - Icon đám mây trên menu bar: Start/Stop từng port, copy URL khi đã đóng cửa sổ. Thoát app sẽ tắt mọi `cloudflared`.

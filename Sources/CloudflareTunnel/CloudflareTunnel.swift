@@ -132,7 +132,7 @@ final class CloudflareTunnel {
     /// Create the tunnel when this account has none by that name, then point the hostname at it (replacing an old record).
     private func prepareNamedTunnel(_ exe: URL, _ config: Config) throws {
         guard Self.isLoggedIn else { throw Failure("Not logged in to Cloudflare. Press Login first.") }
-        guard !config.hostname.isEmpty, config.hostname.contains(".") else { throw Failure("Enter the domain, e.g. nakama.example.com.") }
+        guard !config.hostname.isEmpty, config.hostname.contains(".") else { throw Failure("Enter the domain, e.g. api.example.com.") }
         guard !config.tunnelName.isEmpty else { throw Failure("Enter a tunnel name.") }
 
         let log: (String) -> Void = { [onEvent] in onEvent(.log($0)) }

@@ -14,7 +14,8 @@ enum TunnelStatus: Equatable {
 struct TunnelEntry: Codable, Identifiable, Equatable {
     var id = UUID()
     var label = ""
-    var port = 8080
+    /// 0 = not entered yet.
+    var port = 0
     var originTLS = false
     var mode: CloudflareTunnel.Mode = .quick
     var hostname = ""
@@ -41,7 +42,7 @@ final class TunnelItem: ObservableObject, Identifiable {
         self.onChange = onChange
     }
 
-    var title: String { entry.label.isEmpty ? "Port \(entry.port)" : entry.label }
+    var title: String { entry.label.isEmpty ? (entry.port > 0 ? "Port \(entry.port)" : "New tunnel") : entry.label }
     var isStopped: Bool { status == .stopped }
 }
 
@@ -68,11 +69,9 @@ final class TunnelModel: ObservableObject {
     var runningCount: Int { items.filter { $0.status.url != nil }.count }
 
     init() {
-        let saved = defaults.data(forKey: "entries").flatMap { try? JSONDecoder().decode([TunnelEntry].self, from: $0) }
-        // First launch: the two Nakama ports.
-        let entries = saved ?? [TunnelEntry(label: "Nakama API", port: 7350, tunnelName: "nakama-api"),
-                                TunnelEntry(label: "Nakama Console", port: 7351, tunnelName: "nakama-console")]
-        items = entries.map(makeItem)
+        let saved = defaults.data(forKey: "tunnels").flatMap { try? JSONDecoder().decode([TunnelEntry].self, from: $0) }
+        // First launch: one empty row to fill in.
+        items = (saved ?? [TunnelEntry()]).map(makeItem)
         checkPorts()
         portTimer = Timer.scheduledTimer(withTimeInterval: 3, repeats: true) { [weak self] _ in
             MainActor.assumeIsolated { self?.checkPorts() }
@@ -91,14 +90,13 @@ final class TunnelModel: ObservableObject {
     }
 
     private func save() {
-        if let data = try? JSONEncoder().encode(items.map(\.entry)) { defaults.set(data, forKey: "entries") }
+        if let data = try? JSONEncoder().encode(items.map(\.entry)) { defaults.set(data, forKey: "tunnels") }
     }
 
     // MARK: - List
 
     func add() {
-        let port = (items.map(\.entry.port).max() ?? 8079) + 1
-        items.append(makeItem(TunnelEntry(port: port, tunnelName: "port-\(port)")))
+        items.append(makeItem(TunnelEntry()))
         save()
         checkPorts()
     }
@@ -114,14 +112,16 @@ final class TunnelModel: ObservableObject {
     func start(_ item: TunnelItem) {
         guard item.tunnel == nil else { return }
         let entry = item.entry
-        guard (1...65535).contains(entry.port) else { item.error = "Port must be 1–65535."; return }
+        guard (1...65535).contains(entry.port) else { item.error = "Enter the local port (1–65535), e.g. 8080."; return }
+        let tunnelName = entry.tunnelName.trimmingCharacters(in: .whitespaces).isEmpty
+            ? "tunnel-\(entry.port)" : entry.tunnelName.trimmingCharacters(in: .whitespaces)
         if let other = items.first(where: { $0.id != item.id && !$0.isStopped && $0.entry.mode == .domain && entry.mode == .domain
-                                            && $0.entry.tunnelName == entry.tunnelName }) {
-            item.error = "Tunnel name '\(entry.tunnelName)' is already used by \(other.title). Each domain needs its own tunnel name."
+                                            && $0.entry.tunnelName.trimmingCharacters(in: .whitespaces) == tunnelName }) {
+            item.error = "Tunnel name '\(tunnelName)' is already used by \(other.title). Each domain needs its own tunnel name."
             return
         }
         let config = CloudflareTunnel.Config(mode: entry.mode, port: entry.port, originTLS: entry.originTLS,
-                                             tunnelName: entry.tunnelName.trimmingCharacters(in: .whitespaces),
+                                             tunnelName: tunnelName,
                                              hostname: entry.hostname.trimmingCharacters(in: .whitespaces).lowercased())
         let tunnel = CloudflareTunnel { [weak self, weak item] event in
             Task { @MainActor in
