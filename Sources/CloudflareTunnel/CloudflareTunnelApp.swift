@@ -116,9 +116,10 @@ struct ContentView: View {
                         ProgressView().controlSize(.small)
                         Button("Open Page") { model.openLoginPage() }.disabled(model.loginURL == nil)
                         Button("Cancel") { model.cancelLogin() }
+                    } else if model.isCloudflareLoggedIn {
+                        Button("Logout") { model.logoutCloudflare() }
                     } else {
-                        Button("Login…") { model.loginCloudflare() }
-                            .disabled(model.isCloudflareLoggedIn || !model.hasCloudflared)
+                        Button("Login…") { model.loginCloudflare() }.disabled(!model.hasCloudflared)
                     }
                 }
                 if model.isLoggingIn, let url = model.loginURL {

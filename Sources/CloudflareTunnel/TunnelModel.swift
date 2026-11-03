@@ -183,6 +183,25 @@ final class TunnelModel: ObservableObject {
         })
     }
 
+    /// cloudflared has no logout: move cert.pem to the Trash. Tunnel credentials (<id>.json) stay, so running
+    /// custom-domain tunnels keep working and the same tunnel names can be reused after logging in again.
+    func logoutCloudflare() {
+        let alert = NSAlert()
+        alert.messageText = "Log out of Cloudflare?"
+        alert.informativeText = "Moves ~/.cloudflared/cert.pem to the Trash. Running tunnels keep working; starting a Custom domain tunnel needs Login again."
+        alert.addButton(withTitle: "Log Out")
+        alert.addButton(withTitle: "Cancel")
+        guard alert.runModal() == .alertFirstButtonReturn else { return }
+        do {
+            try FileManager.default.trashItem(at: CloudflareTunnel.configFolder.appendingPathComponent("cert.pem"), resultingItemURL: nil)
+            loginError = nil
+            appendLine("Logged out, cert.pem moved to the Trash")
+        } catch {
+            loginError = error.localizedDescription
+        }
+        isCloudflareLoggedIn = CloudflareTunnel.isLoggedIn
+    }
+
     func cancelLogin() {
         loginProcess?.terminate()
     }

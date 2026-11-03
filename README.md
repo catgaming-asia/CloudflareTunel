@@ -24,6 +24,7 @@ Mở app: `open build/CloudflareTunnel.app` (đã commit sẵn). Build lại: b�
 - Mỗi dòng: **Name**, **Port**, *listening / not listening* (app kiểm `localhost:<port>` mỗi 3 giây), **HTTPS origin** (bật khi server local tự chạy https, không kiểm chứng chỉ).
 - **Quick**: URL ngẫu nhiên `https://<từ-ngẫu-nhiên>.trycloudflare.com`, không cần tài khoản, đổi mỗi lần Start.
 - **Custom domain**: URL cố định `https://<domain>`; domain phải là zone trong tài khoản Cloudflare.
+  **Logout** (khi đã đăng nhập) chuyển `cert.pem` vào Thùng rác; tunnel đang chạy vẫn chạy, muốn Start Custom domain thì Login lại.
   1. **Login…** một lần trên máy (khung *Cloudflare*). Ở trang **Authorize Cloudflare Tunnel** chọn zone (vd. `example.com`) rồi bấm **Authorize** → có `~/.cloudflared/cert.pem`.
   2. Nhập **Domain** (vd. `nakama.example.com`) và **Tunnel** (tên tunnel riêng cho mỗi dòng, vd. `nakama-api`, `nakama-console`).
   3. **Start** tự tạo tunnel (nếu chưa có) và bản ghi DNS (ghi đè bản ghi cũ).
