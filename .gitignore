@@ -60,3 +60,8 @@ fastlane/report.xml
 fastlane/Preview.html
 fastlane/screenshots/**/*.png
 fastlane/test_output
+
+# CloudflareTunnel
+.swiftpm/
+.DS_Store
+# build/CloudflareTunnel.app is committed so the team can open it without building.
